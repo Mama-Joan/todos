@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc, onSnapshot } from "firebase/firestore";
 
-// ── Firebase config ────────────────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyDSPGu4UKggMnazc-ojzndqO9Hz3-b9LN8",
   authDomain: "joan-todos.firebaseapp.com",
@@ -14,14 +13,12 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
-const TASKS_DOC = "joan/tasks";
 
-// ── Sheet constants ────────────────────────────────────────────────────────────
 const SHEET_ID  = "1gSxJqCPLmoI4laOjC2ug0bqcLnOZFSTqUL7T67ykt1Y";
 const SCOPES    = "https://www.googleapis.com/auth/spreadsheets";
 const DISCOVERY = "https://sheets.googleapis.com/$discovery/rest?version=v4";
+const GOOGLE_CLIENT_ID = "531798086854-cebigms1uaqegtjsqq1ft7djrn6c3n4m.apps.googleusercontent.com";
 
-// ── Constants ──────────────────────────────────────────────────────────────────
 const STATUSES = [
   { id: "all",               label: "All",               color: "#6b7280" },
   { id: "waiting_on_me",    label: "Waiting on Me",      color: "#dc2626" },
@@ -58,7 +55,6 @@ const TEXT_COLORS = ["#111827","#dc2626","#d97706","#16a34a","#2563eb","#7c3aed"
 
 function genId() { return Math.random().toString(36).slice(2, 10); }
 
-// ── Sheet helpers ──────────────────────────────────────────────────────────────
 function parseSheetTasks(cell) {
   if (!cell?.trim()) return [];
   return cell.split("||").map(raw => {
@@ -75,7 +71,6 @@ function serializeSheetTasks(tasks) {
   return tasks.map(t=>`${t.text}::${smap[t.status]||"open"}::${t.priority}`).join("||");
 }
 
-// ── Voice AI ───────────────────────────────────────────────────────────────────
 async function parseVoiceWithClaude(transcript, currentTab, currentDate) {
   const resp = await fetch("https://api.anthropic.com/v1/messages", {
     method:"POST", headers:{"Content-Type":"application/json"},
@@ -116,7 +111,6 @@ function useVoice() {
   return {listening,transcript,error,supported,start,stop,setTranscript};
 }
 
-// ── UI Atoms ───────────────────────────────────────────────────────────────────
 function StatusBadge({status,small,onClick}) {
   const m=STATUS_META[status]||STATUS_META.waiting_on_me;
   return <span onClick={onClick} style={{fontSize:small?10:11,fontWeight:700,letterSpacing:"0.04em",padding:small?"2px 7px":"3px 10px",borderRadius:99,background:m.bg,color:m.text,border:`1px solid ${m.border}`,whiteSpace:"nowrap",userSelect:"none",cursor:onClick?"pointer":"default",WebkitTapHighlightColor:"transparent"}}>{m.label}</span>;
@@ -131,7 +125,6 @@ function Pill({label,active,color,onClick}) {
 function cycleStatus(s){const o=["waiting_on_me","waiting_on_others","on_hold","done"];return o[(o.indexOf(s)+1)%o.length];}
 function cyclePriority(p){const o=["high","medium","low"];return o[(o.indexOf(p)+1)%o.length];}
 
-// ── Rich Toolbar ───────────────────────────────────────────────────────────────
 function RichToolbar({editorRef,accent}) {
   const [showLink,setShowLink]=useState(false);
   const [linkUrl,setLinkUrl]=useState("");
@@ -164,8 +157,8 @@ function RichToolbar({editorRef,accent}) {
           {TEXT_COLORS.map(c=><button key={c} onMouseDown={e=>{e.preventDefault();exec("foreColor",c);}} style={{width:18,height:18,borderRadius:3,background:c,border:"1.5px solid rgba(0,0,0,0.12)",cursor:"pointer",padding:0,flexShrink:0}}/>)}
         </div>
         <div style={sep}/>
-        <button onMouseDown={e=>{e.preventDefault();exec("insertUnorderedList");}} style={btn(isActive("insertUnorderedList"))} title="Bullet">≡</button>
-        <button onMouseDown={e=>{e.preventDefault();exec("insertOrderedList");}} style={btn(isActive("insertOrderedList"))} title="Numbered">1.</button>
+        <button onMouseDown={e=>{e.preventDefault();exec("insertUnorderedList");}} style={btn(isActive("insertUnorderedList"))}>≡</button>
+        <button onMouseDown={e=>{e.preventDefault();exec("insertOrderedList");}} style={btn(isActive("insertOrderedList"))}>1.</button>
         <div style={sep}/>
         <button onMouseDown={e=>{e.preventDefault();saveRange();setShowLink(s=>!s);}} style={{...btn(showLink),fontSize:14}}>🔗</button>
         <button onMouseDown={e=>{e.preventDefault();exec("removeFormat");}} style={{...btn(false),color:"#9ca3af",fontSize:11}}>✕fmt</button>
@@ -193,7 +186,6 @@ function RichEditor({editorRef,accent,placeholder}) {
   );
 }
 
-// ── Add Form ───────────────────────────────────────────────────────────────────
 function AddForm({onAdd,accent,isSubtask}) {
   const [open,setOpen]=useState(false);
   const [status,setStatus]=useState("waiting_on_me");
@@ -236,7 +228,6 @@ function AddForm({onAdd,accent,isSubtask}) {
   );
 }
 
-// ── Subtask Row ────────────────────────────────────────────────────────────────
 function SubtaskRow({sub,onUpdate,onDelete}) {
   const [editing,setEditing]=useState(false);
   const [text,setText]=useState(sub.text);
@@ -260,7 +251,6 @@ function SubtaskRow({sub,onUpdate,onDelete}) {
   );
 }
 
-// ── Task Card ──────────────────────────────────────────────────────────────────
 function TaskCard({task,onUpdate,onDelete,accent}) {
   const [expanded,setExpanded]=useState(false);
   const [editing,setEditing]=useState(false);
@@ -319,7 +309,6 @@ function TaskCard({task,onUpdate,onDelete,accent}) {
   );
 }
 
-// ── Table Row ──────────────────────────────────────────────────────────────────
 function TableRow({task,onUpdate,onDelete,accent,depth}) {
   const [showSubs,setShowSubs]=useState(false);
   const subs=task.subtasks||[];
@@ -363,7 +352,6 @@ function TableRow({task,onUpdate,onDelete,accent,depth}) {
   );
 }
 
-// ── Section Panel ──────────────────────────────────────────────────────────────
 function SectionPanel({section,tasks,onTasksChange,accent,viewMode,statusFilter,onSync,syncing}) {
   const [collapsed,setCollapsed]=useState(false);
   const filtered=statusFilter==="all"?tasks:tasks.filter(t=>t.status===statusFilter);
@@ -414,7 +402,6 @@ function SectionPanel({section,tasks,onTasksChange,accent,viewMode,statusFilter,
   );
 }
 
-// ── Voice Button ───────────────────────────────────────────────────────────────
 function VoiceButton({onTaskCreated,currentTab}) {
   const {listening,transcript,error,supported,start,stop,setTranscript}=useVoice();
   const [phase,setPhase]=useState("idle");
@@ -522,7 +509,6 @@ function VoiceButton({onTaskCreated,currentTab}) {
   );
 }
 
-// ── Sign-in Banner ─────────────────────────────────────────────────────────────
 function SignInBanner({onSignIn,loading}) {
   return (
     <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:12,padding:"14px 16px",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
@@ -537,7 +523,6 @@ function SignInBanner({onSignIn,loading}) {
   );
 }
 
-// ── App ────────────────────────────────────────────────────────────────────────
 export default function App() {
   const [tab,setTab]=useState("work");
   const [viewMode,setViewMode]=useState("cards");
@@ -555,14 +540,12 @@ export default function App() {
   const accentPersonal="#16a34a";
   const accent=tab==="work"?accentWork:accentPersonal;
 
-  // ── Firebase real-time listener ──────────────────────────────────────────────
   useEffect(()=>{
     const ref=doc(db,"joan","tasks");
     const unsub=onSnapshot(ref,(snap)=>{
       if(snap.exists()){
         setTasks(snap.data());
       } else {
-        // First time — initialise empty sections
         const init={};
         [...WORK_SECTIONS,...PERSONAL_SECTIONS].forEach(s=>{init[s.id]=[];});
         setTasks(init);
@@ -571,48 +554,61 @@ export default function App() {
       setDbLoading(false);
     },(err)=>{
       console.error("Firebase error:",err);
-      // Fall back to localStorage if Firebase fails
       try{const s=localStorage.getItem("joan_todos_v3");if(s){setTasks(JSON.parse(s));}}catch{}
       setDbLoading(false);
     });
     return ()=>unsub();
   },[]);
 
-  // ── Save to Firebase (debounced 800ms) ───────────────────────────────────────
   const saveToFirebase=useCallback((newTasks)=>{
     if(saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current=setTimeout(async()=>{
-      try{
-        await setDoc(doc(db,"joan","tasks"),newTasks);
-      }catch(e){
-        console.error("Save failed:",e);
-        localStorage.setItem("joan_todos_v3",JSON.stringify(newTasks));
-      }
+      try{await setDoc(doc(db,"joan","tasks"),newTasks);}
+      catch(e){console.error("Save failed:",e);localStorage.setItem("joan_todos_v3",JSON.stringify(newTasks));}
     },800);
   },[]);
 
-  // ── GAPI ─────────────────────────────────────────────────────────────────────
   useEffect(()=>{
-    const s=document.createElement("script");s.src="https://apis.google.com/js/api.js";
-    s.onload=()=>window.gapi.load("client",async()=>{try{await window.gapi.client.init({discoveryDocs:[DISCOVERY]});}catch{}});
-    document.head.appendChild(s);
+    const s1=document.createElement("script");
+    s1.src="https://apis.google.com/js/api.js";
+    s1.onload=()=>window.gapi.load("client",async()=>{
+      try{await window.gapi.client.init({discoveryDocs:[DISCOVERY]});}catch{}
+    });
+    document.head.appendChild(s1);
+    const s2=document.createElement("script");
+    s2.src="https://accounts.google.com/gsi/client";
+    s2.async=true;
+    document.head.appendChild(s2);
   },[]);
 
   const handleSignIn=useCallback(async()=>{
     setGapiLoading(true);setSyncMsg(null);
     try{
-      if(!window.gapi?.auth2)await new Promise((res,rej)=>window.gapi.load("auth2",{callback:res,onerror:rej}));
-      let cid=localStorage.getItem("joan_gapi_cid");
-      if(!cid){
-        const id=window.prompt("Enter your Google OAuth Client ID:\n\n1. console.cloud.google.com\n2. APIs & Services → Credentials\n3. Create OAuth 2.0 Client ID (Web application)\n4. Enable Google Sheets API\n5. Add https://mama-joan.github.io to Authorized JavaScript origins");
-        if(!id){setGapiLoading(false);return;}
-        localStorage.setItem("joan_gapi_cid",id.trim());cid=id.trim();
+      if(!window.gapi?.client){
+        await new Promise((res,rej)=>window.gapi.load("client",{callback:res,onerror:rej}));
       }
-      const auth2=await window.gapi.auth2.init({client_id:cid,scope:SCOPES});
-      await auth2.signIn();
-      window.gapi.client.setToken({access_token:auth2.currentUser.get().getAuthResponse().access_token});
-      setSignedIn(true);setSyncMsg({type:"ok",msg:"Signed in! Click Sync Sheet on Deals to load your deals."});
-    }catch{setSyncMsg({type:"err",msg:"Sign-in failed. Check your Client ID."});localStorage.removeItem("joan_gapi_cid");}
+      await window.gapi.client.init({discoveryDocs:[DISCOVERY]});
+      const token=await new Promise((resolve,reject)=>{
+        if(!window.google?.accounts?.oauth2){
+          reject(new Error("Google Identity Services not loaded yet. Please try again."));return;
+        }
+        const client=window.google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: SCOPES,
+          callback:(response)=>{
+            if(response.error)reject(new Error(response.error));
+            else resolve(response.access_token);
+          },
+        });
+        client.requestAccessToken();
+      });
+      window.gapi.client.setToken({access_token:token});
+      setSignedIn(true);
+      setSyncMsg({type:"ok",msg:"Signed in! Click Sync Sheet on Deals to load your deals."});
+    }catch(err){
+      console.error("Sign in error:",err);
+      setSyncMsg({type:"err",msg:"Sign-in failed: "+(err.message||"Unknown error")});
+    }
     setGapiLoading(false);
   },[]);
 
@@ -641,8 +637,7 @@ export default function App() {
 
   const updateSectionTasks=(sid,updated)=>{
     const newTasks={...tasks,[sid]:updated};
-    setTasks(newTasks);
-    saveToFirebase(newTasks);
+    setTasks(newTasks);saveToFirebase(newTasks);
     if(sid==="deals")updated.filter(t=>t.synced&&t.rowIndex).forEach(writeBack);
   };
 
@@ -650,8 +645,7 @@ export default function App() {
     const sid=parsed.section||"general";
     const newTask={id:genId(),text:parsed.text,status:parsed.status||"waiting_on_me",priority:parsed.priority||"medium",dueDate:parsed.dueDate||"",notes:parsed.notes||"",subtasks:[],isRich:false};
     const newTasks={...tasks,[sid]:[...(tasks[sid]||[]),newTask]};
-    setTasks(newTasks);
-    saveToFirebase(newTasks);
+    setTasks(newTasks);saveToFirebase(newTasks);
     setTab(WORK_SECTIONS.some(s=>s.id===sid)?"work":"personal");
   },[tasks,saveToFirebase]);
 
@@ -690,7 +684,6 @@ export default function App() {
           </div>
         </div>
       </div>
-
       <div style={{maxWidth:860,margin:"0 auto",padding:"14px 12px 16px"}}>
         {tab==="work"&&!signedIn&&<SignInBanner onSignIn={handleSignIn} loading={gapiLoading}/>}
         {syncMsg&&(
