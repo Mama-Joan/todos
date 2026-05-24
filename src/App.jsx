@@ -66,9 +66,15 @@ function parseSheetTasks(cell) {
     return { id:genId(), text, status, priority, subtasks:[], notes:"", dueDate:"", synced:true };
   });
 }
+function stripHtml(html) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  return (tmp.textContent || tmp.innerText || "").trim();
+}
+
 function serializeSheetTasks(tasks) {
   const smap = { waiting_on_me:"open", waiting_on_others:"waiting", on_hold:"hold", done:"done" };
-  return tasks.map(t=>`${t.text}::${smap[t.status]||"open"}::${t.priority}`).join("||");
+  return tasks.map(t=>`${stripHtml(t.text)}::${smap[t.status]||"open"}::${t.priority}`).join("||");
 }
 
 async function parseVoiceWithClaude(transcript, currentTab, currentDate) {
